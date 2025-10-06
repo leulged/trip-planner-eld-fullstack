@@ -14,6 +14,7 @@ from .serializers import (
     TripCalculationResponseSerializer, UserSerializer
 )
 from .calculations import HOSCalculator
+from .distance_service import DistanceService
 
 
 @api_view(['GET'])
@@ -59,9 +60,13 @@ def calculate_trip(request):
     dropoff_location = serializer.validated_data['dropoff_location']
     current_cycle_used = serializer.validated_data['current_cycle_used']
     
-    # Mock distance calculation (in real implementation, use geocoding API)
-    # For demo purposes, using estimated distances
-    distance_miles = 850  # Mock distance - in real app, calculate using map API
+    # Calculate real distance and duration between locations
+    print(f"DEBUG: Calculating distance from {current_location} to {dropoff_location}")
+    route_data = DistanceService.calculate_distance_and_duration(current_location, dropoff_location)
+    distance_miles = route_data['distance_miles']
+    estimated_duration = route_data['duration_hours']
+    
+    print(f"DEBUG: Calculated distance: {distance_miles} miles, duration: {estimated_duration} hours")
     
     # Calculate trip details
     try:

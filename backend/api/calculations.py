@@ -26,6 +26,13 @@ class HOSCalculator:
     DROPOFF_DURATION = 1  # hour
     AVERAGE_SPEED = 55  # mph
     
+    # Enhanced HOS calculations
+    MAX_CONSECUTIVE_DRIVING = 8  # hours before mandatory break
+    MANDATORY_BREAK_DURATION = 0.5  # 30 minutes
+    FUEL_STOP_TIME = 0.5  # hours for fuel stop
+    LOADING_TIME = 1  # hour for pickup
+    UNLOADING_TIME = 1  # hour for dropoff
+    
     @staticmethod
     def calculate_trip_details(current_cycle_used: Decimal, distance_miles: Decimal) -> dict:
         """
@@ -41,23 +48,29 @@ class HOSCalculator:
         # Calculate driving time
         driving_time = distance_miles / HOSCalculator.AVERAGE_SPEED
         
-        # Calculate fuel stops needed
+        # Calculate fuel stops needed (every 1000 miles)
         fuel_stops = math.ceil(distance_miles / HOSCalculator.FUEL_STOP_INTERVAL) - 1
         fuel_stops = max(0, fuel_stops)  # Ensure non-negative
         
         # Calculate total fuel stop time
-        total_fuel_time = fuel_stops * HOSCalculator.FUEL_STOP_DURATION
+        total_fuel_time = fuel_stops * HOSCalculator.FUEL_STOP_TIME
         
         # Calculate pickup/dropoff time
-        pickup_dropoff_time = HOSCalculator.PICKUP_DURATION + HOSCalculator.DROPOFF_DURATION
+        pickup_dropoff_time = HOSCalculator.LOADING_TIME + HOSCalculator.UNLOADING_TIME
         
-        # Calculate rest stops needed (30-minute break every 8 hours of driving)
-        rest_stops_needed = math.ceil(driving_time / HOSCalculator.MAX_DRIVING_BEFORE_BREAK) - 1
+        # Calculate mandatory rest breaks (30-minute break every 8 hours of driving)
+        rest_stops_needed = math.ceil(driving_time / HOSCalculator.MAX_CONSECUTIVE_DRIVING) - 1
         rest_stops_needed = max(0, rest_stops_needed)
-        total_rest_time = rest_stops_needed * HOSCalculator.MIN_REST_BREAK
+        total_rest_time = rest_stops_needed * HOSCalculator.MANDATORY_BREAK_DURATION
         
-        # Calculate total trip time
-        total_trip_time = driving_time + total_fuel_time + pickup_dropoff_time + total_rest_time
+        # Calculate additional on-duty time (pre-trip, post-trip, paperwork)
+        pre_trip_time = 0.5  # 30 minutes
+        post_trip_time = 0.5  # 30 minutes
+        paperwork_time = 0.25  # 15 minutes
+        total_on_duty_time = pre_trip_time + post_trip_time + paperwork_time
+        
+        # Calculate total trip time (including all on-duty activities)
+        total_trip_time = driving_time + total_fuel_time + pickup_dropoff_time + total_rest_time + total_on_duty_time
         
         # Calculate days needed
         days_needed = math.ceil(total_trip_time / HOSCalculator.MAX_DAILY_ON_DUTY)
@@ -75,10 +88,14 @@ class HOSCalculator:
             'days_needed': days_needed,
             'feasible': feasible,
             'remaining_cycle_hours': Decimal(str(round(remaining_cycle_hours, 2))),
-            'pickup_duration': HOSCalculator.PICKUP_DURATION,
-            'dropoff_duration': HOSCalculator.DROPOFF_DURATION,
-            'fuel_stop_duration': HOSCalculator.FUEL_STOP_DURATION,
-            'rest_break_duration': HOSCalculator.MIN_REST_BREAK,
+            'pickup_duration': HOSCalculator.LOADING_TIME,
+            'dropoff_duration': HOSCalculator.UNLOADING_TIME,
+            'fuel_stop_duration': HOSCalculator.FUEL_STOP_TIME,
+            'rest_break_duration': HOSCalculator.MANDATORY_BREAK_DURATION,
+            'on_duty_time': Decimal(str(round(total_on_duty_time, 2))),
+            'driving_time': Decimal(str(round(driving_time, 2))),
+            'fuel_time': Decimal(str(round(total_fuel_time, 2))),
+            'rest_time': Decimal(str(round(total_rest_time, 2))),
         }
     
     @staticmethod
