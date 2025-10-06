@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-*qez63v#x#^$ds^85d59lii%*p@2@dyvh78=p$k)chxctu6llw
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -145,7 +145,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5173",
 ]
 
-CORS_ALLOW_ALL_ORIGINS = False  # Must be False when using credentials
+# Allow all origins for deployment
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True   # Allow cookies to be sent
 
 # REST Framework settings
