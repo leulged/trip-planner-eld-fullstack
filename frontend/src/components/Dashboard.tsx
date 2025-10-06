@@ -1,23 +1,30 @@
-import React, { useState } from 'react';
-import { 
-  Truck, 
-  Map, 
-  History, 
-  User, 
-  LogOut, 
-  Clock, 
+import React, { useState } from "react";
+import {
+  Truck,
+  Map,
+  History,
+  User,
+  LogOut,
+  Clock,
   AlertTriangle,
   CheckCircle,
   Plus,
   Navigation,
   Fuel,
   Menu,
-  X
-} from 'lucide-react';
-import { Button } from './ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Progress } from './ui/progress';
-import { Badge } from './ui/badge';
+  X,
+  FileText,
+} from "lucide-react";
+import { Button } from "./ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "./ui/card";
+import { Progress } from "./ui/progress";
+import { Badge } from "./ui/badge";
 
 interface User {
   id: string;
@@ -30,9 +37,15 @@ interface DashboardProps {
   user: User;
   onNavigate: (page: string) => void;
   pastTripsCount: number;
+  hasRecentTrip?: boolean;
 }
 
-export function Dashboard({ user, onNavigate, pastTripsCount }: DashboardProps) {
+export function Dashboard({
+  user,
+  onNavigate,
+  pastTripsCount,
+  hasRecentTrip = false,
+}: DashboardProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const cyclePercentage = (user.currentCycleUsed / 70) * 100;
   const remainingHours = 70 - user.currentCycleUsed;
@@ -55,33 +68,33 @@ export function Dashboard({ user, onNavigate, pastTripsCount }: DashboardProps) 
                 <p className="text-white/80 text-xs">Highway Horizon</p>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               {/* Desktop Navigation */}
               <nav className="hidden md:flex items-center space-x-2">
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   size="sm"
                   className="text-white hover:bg-white/10"
-                  onClick={() => onNavigate('past-trips')}
+                  onClick={() => onNavigate("past-trips")}
                 >
                   <History className="w-4 h-4 mr-2" />
                   Past Trips
                 </Button>
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   size="sm"
                   className="text-white hover:bg-white/10"
-                  onClick={() => onNavigate('profile')}
+                  onClick={() => onNavigate("profile")}
                 >
                   <User className="w-4 h-4 mr-2" />
                   {user.name}
                 </Button>
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   size="sm"
                   className="text-white hover:bg-white/10"
-                  onClick={() => onNavigate('login')}
+                  onClick={() => onNavigate("login")}
                 >
                   <LogOut className="w-4 h-4" />
                 </Button>
@@ -89,13 +102,17 @@ export function Dashboard({ user, onNavigate, pastTripsCount }: DashboardProps) 
 
               {/* Mobile menu button */}
               <div className="md:hidden">
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   size="sm"
                   className="text-white hover:bg-white/10"
                   onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 >
-                  {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                  {isMobileMenuOpen ? (
+                    <X className="w-5 h-5" />
+                  ) : (
+                    <Menu className="w-5 h-5" />
+                  )}
                 </Button>
               </div>
             </div>
@@ -107,36 +124,36 @@ export function Dashboard({ user, onNavigate, pastTripsCount }: DashboardProps) 
       {isMobileMenuOpen && (
         <div className="md:hidden bg-white border-b border-slate-200 px-4 py-4">
           <nav className="grid gap-2">
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               className="justify-start"
               onClick={() => {
-                onNavigate('past-trips');
+                onNavigate("past-trips");
                 setIsMobileMenuOpen(false);
               }}
             >
               <History className="w-4 h-4 mr-2" />
               Past Trips
             </Button>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               className="justify-start"
               onClick={() => {
-                onNavigate('profile');
+                onNavigate("profile");
                 setIsMobileMenuOpen(false);
               }}
             >
               <User className="w-4 h-4 mr-2" />
               Profile
             </Button>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               className="justify-start"
               onClick={() => {
-                onNavigate('login');
+                onNavigate("login");
                 setIsMobileMenuOpen(false);
               }}
             >
@@ -173,12 +190,10 @@ export function Dashboard({ user, onNavigate, pastTripsCount }: DashboardProps) 
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold mb-2">
-                {user.currentCycleUsed}<span className="text-lg text-muted-foreground">/70</span>
+                {user.currentCycleUsed}
+                <span className="text-lg text-muted-foreground">/70</span>
               </div>
-              <Progress 
-                value={cyclePercentage} 
-                className="mb-3 h-2"
-              />
+              <Progress value={cyclePercentage} className="mb-3 h-2" />
               <div className="flex items-center space-x-2">
                 {isNearLimit ? (
                   <AlertTriangle className="h-4 w-4 text-warning" />
@@ -224,9 +239,7 @@ export function Dashboard({ user, onNavigate, pastTripsCount }: DashboardProps) 
               <div className="text-3xl font-bold mb-2 text-green-600">
                 Compliant
               </div>
-              <Badge className="status-compliant">
-                Ready to Drive
-              </Badge>
+              <Badge className="status-compliant">Ready to Drive</Badge>
             </CardContent>
           </Card>
 
@@ -257,22 +270,37 @@ export function Dashboard({ user, onNavigate, pastTripsCount }: DashboardProps) 
             </div>
             <h3 className="text-2xl font-bold mb-2">Plan Your Next Trip</h3>
             <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-              Input your route details and get comprehensive HOS-compliant trip planning with automated rest stops and ELD logs
+              Input your route details and get comprehensive HOS-compliant trip
+              planning with automated rest stops and ELD logs
             </p>
-            <Button 
-              className="btn-highway text-lg px-8 py-4 h-auto"
-              onClick={() => onNavigate('trip-input')}
-            >
-              <Navigation className="w-5 h-5 mr-2" />
-              Start Trip Planning
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Button
+                className="btn-highway text-lg px-8 py-4 h-auto"
+                onClick={() => onNavigate("trip-input")}
+              >
+                <Navigation className="w-5 h-5 mr-2" />
+                Start Trip Planning
+              </Button>
+              {hasRecentTrip && (
+                <Button
+                  className="btn-secondary-highway text-lg px-8 py-4 h-auto"
+                  onClick={() => onNavigate("eld-test")}
+                >
+                  <FileText className="w-5 h-5 mr-2" />
+                  View ELD Logs
+                </Button>
+              )}
+            </div>
           </CardContent>
         </Card>
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* View Past Trips */}
-          <Card className="card-highway group cursor-pointer" onClick={() => onNavigate('past-trips')}>
+          <Card
+            className="card-highway group cursor-pointer"
+            onClick={() => onNavigate("past-trips")}
+          >
             <CardHeader>
               <CardTitle className="flex items-center space-x-3">
                 <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
@@ -287,10 +315,10 @@ export function Dashboard({ user, onNavigate, pastTripsCount }: DashboardProps) 
             <CardContent>
               <div className="flex items-center justify-between">
                 <div className="text-2xl font-bold">{pastTripsCount} trips</div>
-                <Button 
+                <Button
                   variant="outline"
                   className="btn-secondary-highway"
-                  onClick={() => onNavigate('past-trips')}
+                  onClick={() => onNavigate("past-trips")}
                 >
                   View All
                 </Button>
@@ -302,29 +330,27 @@ export function Dashboard({ user, onNavigate, pastTripsCount }: DashboardProps) 
           <Card>
             <CardHeader>
               <CardTitle>Quick Actions</CardTitle>
-              <CardDescription>
-                Access frequently used features
-              </CardDescription>
+              <CardDescription>Access frequently used features</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="w-full justify-start"
-                onClick={() => onNavigate('past-trips')}
+                onClick={() => onNavigate("past-trips")}
               >
                 <History className="w-4 h-4 mr-2" />
                 View Trip History
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="w-full justify-start"
-                onClick={() => onNavigate('profile')}
+                onClick={() => onNavigate("profile")}
               >
                 <User className="w-4 h-4 mr-2" />
                 Update Profile
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="w-full justify-start"
                 disabled
               >
@@ -344,19 +370,27 @@ export function Dashboard({ user, onNavigate, pastTripsCount }: DashboardProps) 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
               <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg">
                 <h4 className="font-semibold mb-1">Daily Driving</h4>
-                <p className="text-muted-foreground">Maximum 11 hours per day</p>
+                <p className="text-muted-foreground">
+                  Maximum 11 hours per day
+                </p>
               </div>
               <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg">
                 <h4 className="font-semibold mb-1">Driving Window</h4>
-                <p className="text-muted-foreground">14 hours maximum on-duty</p>
+                <p className="text-muted-foreground">
+                  14 hours maximum on-duty
+                </p>
               </div>
               <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg">
                 <h4 className="font-semibold mb-1">Rest Break</h4>
-                <p className="text-muted-foreground">30 min after 8 hours driving</p>
+                <p className="text-muted-foreground">
+                  30 min after 8 hours driving
+                </p>
               </div>
               <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg">
                 <h4 className="font-semibold mb-1">Off Duty</h4>
-                <p className="text-muted-foreground">10 consecutive hours to reset</p>
+                <p className="text-muted-foreground">
+                  10 consecutive hours to reset
+                </p>
               </div>
             </div>
           </CardContent>
@@ -365,38 +399,38 @@ export function Dashboard({ user, onNavigate, pastTripsCount }: DashboardProps) 
         {/* Mobile Navigation */}
         <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700">
           <div className="grid grid-cols-4 gap-1 p-2">
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               className="flex flex-col items-center py-2"
-              onClick={() => onNavigate('dashboard')}
+              onClick={() => onNavigate("dashboard")}
             >
               <Truck className="w-4 h-4 mb-1" />
               <span className="text-xs">Home</span>
             </Button>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               className="flex flex-col items-center py-2"
-              onClick={() => onNavigate('trip-input')}
+              onClick={() => onNavigate("trip-input")}
             >
               <Plus className="w-4 h-4 mb-1" />
               <span className="text-xs">New Trip</span>
             </Button>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               className="flex flex-col items-center py-2"
-              onClick={() => onNavigate('past-trips')}
+              onClick={() => onNavigate("past-trips")}
             >
               <History className="w-4 h-4 mb-1" />
               <span className="text-xs">History</span>
             </Button>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               className="flex flex-col items-center py-2"
-              onClick={() => onNavigate('profile')}
+              onClick={() => onNavigate("profile")}
             >
               <User className="w-4 h-4 mb-1" />
               <span className="text-xs">Profile</span>

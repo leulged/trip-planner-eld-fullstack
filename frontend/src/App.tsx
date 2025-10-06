@@ -6,6 +6,7 @@ import { ResultsPage } from "./components/ResultsPage";
 import { PastTripsPage } from "./components/PastTripsPage";
 import { ProfilePage } from "./components/ProfilePage";
 import { calculateTrip, calculateTripLocal } from "./components/TripCalculator";
+import { ELDLogTest } from "./components/ELDLogTest";
 
 type Page =
   | "login"
@@ -13,7 +14,8 @@ type Page =
   | "trip-input"
   | "results"
   | "past-trips"
-  | "profile";
+  | "profile"
+  | "eld-test";
 
 interface User {
   id: string;
@@ -154,6 +156,7 @@ export default function App() {
             user={user!}
             onNavigate={navigateTo}
             pastTripsCount={pastTrips.length}
+            hasRecentTrip={currentTripResult !== null}
           />
         );
       case "trip-input":
@@ -192,6 +195,10 @@ export default function App() {
             onNavigate={navigateTo}
             onUpdateUser={setUser}
           />
+        );
+      case "eld-test":
+        return (
+          <ELDLogTest tripResult={currentTripResult} onNavigate={navigateTo} />
         );
       default:
         return <div>Page not found</div>;

@@ -27,7 +27,7 @@ import {
 import { Badge } from "./ui/badge";
 import { Separator } from "./ui/separator";
 import { LeafletMap } from "./LeafletMap";
-import { EnhancedELDLog } from "./EnhancedELDLog";
+import { ELDLogSheetFMCSA } from "./ELDLogSheetFMCSA";
 
 interface User {
   id: string;
@@ -342,12 +342,14 @@ export function ResultsPage({
             )}
 
             {activeTab === "logs" && (
-              <EnhancedELDLog
-                dailyLogs={tripResult.dailyLogs || []}
+              <ELDLogSheetFMCSA
+                date={new Date().toLocaleDateString()}
                 driverName={user.name}
-                totalMiles={tripResult.totalDistance}
                 vehicleNumber="Truck #101"
                 carrierName="Example Trucking LLC"
+                totalMiles={tripResult.totalDistance || 0}
+                dutyStatuses={tripResult.dailyLogs || []}
+                remarks="Trip from Dallas, TX to Los Angeles, CA via Phoenix, AZ"
               />
             )}
           </div>
