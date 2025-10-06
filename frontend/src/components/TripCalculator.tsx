@@ -1,4 +1,6 @@
 // Trip calculation logic for HOS compliance
+import { apiService, TripCalculationResponse, RoutePoint, ELDLog } from '../services/api';
+
 export interface TripInputData {
   currentLocation: string;
   pickupLocation: string;
@@ -72,7 +74,106 @@ function calculateDistance(from: string, to: string): number {
   return distances[key] || distances[reverseKey] || Math.floor(Math.random() * 800 + 200);
 }
 
-export function calculateTrip(inputData: TripInputData): TripResult {
+export async function calculateTrip(inputData: TripInputData): Promise<TripResult> {
+  try {
+    // Call the Django backend API
+    const response = await apiService.calculateTrip({
+      current_location: inputData.currentLocation,
+      pickup_location: inputData.pickupLocation,
+      dropoff_location: inputData.dropoffLocation,
+      current_cycle_used: inputData.currentCycleUsed,
+    });
+
+    // Convert API response to TripResult format
+    return convertApiResponseToTripResult(response, inputData);
+  } catch (error) {
+    console.error('Trip calculation failed:', error);
+    throw new Error('Failed to calculate trip. Please try again.');
+  }
+}
+
+function convertApiResponseToTripResult(response: TripCalculationResponse, inputData: TripInputData): TripResult {
+  // Convert route points to stops
+  const stops: RouteStop[] = response.route_points.map((point, index) => ({
+    id: point.id.toString(),
+    type: mapPointTypeToStopType(point.point_type),
+    location: point.address,
+    time: '06:00', // Default time - would need to calculate based on sequence
+    duration: point.duration_minutes,
+    description: getStopDescription(point.point_type, point.address),
+    mileage: Math.floor((response.total_distance / response.route_points.length) * index),
+    cumulativeDriving: 0, // Would need to calculate
+    cumulativeOnDuty: 0,  // Would need to calculate
+  }));
+
+  // Generate daily logs (simplified)
+  const dailyLogs: DailyLog[] = [{
+    date: new Date().toISOString().split('T')[0],
+    entries: [{
+      time: '06:00',
+      status: 'on-duty',
+      location: inputData.currentLocation,
+      remarks: 'Trip start'
+    }],
+    totals: {
+      offDuty: 10,
+      sleeperBerth: 0,
+      driving: response.estimated_drive_time,
+      onDuty: response.total_trip_time - response.estimated_drive_time
+    }
+  }];
+
+  // Check compliance
+  const totalCycleUsed = inputData.currentCycleUsed + response.total_trip_time;
+  const isCompliant = totalCycleUsed <= 70;
+  
+  const complianceIssues: string[] = [];
+  if (!isCompliant) {
+    complianceIssues.push('Would exceed 70-hour cycle limit');
+  }
+
+  return {
+    id: response.trip_id.toString(),
+    date: new Date().toISOString().split('T')[0],
+    route: `${inputData.currentLocation} → ${inputData.pickupLocation} → ${inputData.dropoffLocation}`,
+    totalDistance: response.total_distance,
+    totalDrivingHours: response.estimated_drive_time,
+    totalOnDutyHours: response.total_trip_time,
+    isCompliant,
+    remainingCycle: Math.max(0, 70 - totalCycleUsed),
+    inputData,
+    stops,
+    dailyLogs,
+    complianceIssues
+  };
+}
+
+function mapPointTypeToStopType(pointType: string): 'start' | 'pickup' | 'dropoff' | 'fuel' | 'rest' | 'sleeper' {
+  switch (pointType) {
+    case 'start': return 'start';
+    case 'pickup': return 'pickup';
+    case 'dropoff': return 'dropoff';
+    case 'fuel': return 'fuel';
+    case 'rest': return 'rest';
+    case 'sleeper': return 'sleeper';
+    default: return 'start';
+  }
+}
+
+function getStopDescription(pointType: string, address: string): string {
+  switch (pointType) {
+    case 'start': return 'Trip start - Pre-trip inspection';
+    case 'pickup': return 'Pickup - Loading cargo (1 hour)';
+    case 'dropoff': return 'Delivery - Unloading cargo (1 hour)';
+    case 'fuel': return 'Fuel stop (30 minutes)';
+    case 'rest': return '30-minute rest break (required after 8hrs driving)';
+    case 'sleeper': return '8-hour sleeper berth rest';
+    default: return address;
+  }
+}
+
+// Keep the original function for backward compatibility (now as fallback)
+export function calculateTripLocal(inputData: TripInputData): TripResult {
   const startTime = new Date();
   startTime.setHours(6, 0, 0, 0); // Assume 6 AM start
   

@@ -206,19 +206,20 @@ class HOSCalculator:
             current_time = time(6, 0)  # Start at 6 AM
             
             # On-duty not driving (pre-trip)
+            pre_trip_end = (datetime.combine(datetime.today(), current_time) + timedelta(hours=1)).time()
             duty_statuses.append({
                 'status': 'on_duty',
                 'start_time': current_time,
-                'end_time': time(current_time.hour + 1, current_time.minute),
+                'end_time': pre_trip_end,
                 'location': 'Pre-trip inspection',
                 'sequence': len(duty_statuses)
             })
-            current_time = time(current_time.hour + 1, current_time.minute)
+            current_time = pre_trip_end
             
             # Driving time
             driving_hours = min(daily_driving, 8)  # Max 8 hours before break
             if driving_hours > 0:
-                end_driving = time(current_time.hour + driving_hours, current_time.minute)
+                end_driving = (datetime.combine(datetime.today(), current_time) + timedelta(hours=driving_hours)).time()
                 duty_statuses.append({
                     'status': 'driving',
                     'start_time': current_time,
@@ -230,7 +231,7 @@ class HOSCalculator:
             
             # Rest break if needed
             if driving_hours >= 8:
-                break_end = time(current_time.hour, current_time.minute + 30)
+                break_end = (datetime.combine(datetime.today(), current_time) + timedelta(minutes=30)).time()
                 duty_statuses.append({
                     'status': 'on_duty',
                     'start_time': current_time,
@@ -243,7 +244,7 @@ class HOSCalculator:
             # Additional driving if day allows
             remaining_driving = daily_driving - driving_hours
             if remaining_driving > 0:
-                end_driving = time(current_time.hour + remaining_driving, current_time.minute)
+                end_driving = (datetime.combine(datetime.today(), current_time) + timedelta(hours=remaining_driving)).time()
                 duty_statuses.append({
                     'status': 'driving',
                     'start_time': current_time,

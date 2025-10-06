@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.contrib.auth.models import User
 from .models import Trip, RoutePoint, ELDLog, DutyStatus
 
 
@@ -67,3 +68,31 @@ class TripCalculationResponseSerializer(serializers.Serializer):
     route_points = RoutePointSerializer(many=True)
     eld_logs_needed = serializers.IntegerField()
     message = serializers.CharField()
+
+
+class UserSerializer(serializers.ModelSerializer):
+    """Serializer for user data"""
+    current_cycle_used = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'current_cycle_used']
+        read_only_fields = ['id']
+    
+    def get_current_cycle_used(self, obj):
+        # Default to 0 for now - could be extended with user profile
+        return 0
+
+
+class LoginRequestSerializer(serializers.Serializer):
+    """Serializer for login requests"""
+    email = serializers.EmailField()
+    password = serializers.CharField()
+
+
+class SignupRequestSerializer(serializers.Serializer):
+    """Serializer for signup requests"""
+    email = serializers.EmailField()
+    password = serializers.CharField(min_length=6)
+    first_name = serializers.CharField(max_length=30)
+    last_name = serializers.CharField(max_length=30)

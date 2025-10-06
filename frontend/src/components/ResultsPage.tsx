@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { 
-  ArrowLeft, 
-  Map, 
-  FileText, 
-  Download, 
-  Save, 
+import React, { useState } from "react";
+import {
+  ArrowLeft,
+  Map,
+  FileText,
+  Download,
+  Save,
   Edit,
   CheckCircle,
   AlertTriangle,
@@ -14,14 +14,20 @@ import {
   Bed,
   Truck,
   Navigation,
-  Route
-} from 'lucide-react';
-import { Button } from './ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Badge } from './ui/badge';
-import { Separator } from './ui/separator';
-import { InteractiveMap } from './InteractiveMap';
-import { EnhancedELDLog } from './EnhancedELDLog';
+  Route,
+} from "lucide-react";
+import { Button } from "./ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "./ui/card";
+import { Badge } from "./ui/badge";
+import { Separator } from "./ui/separator";
+import { LeafletMap } from "./LeafletMap";
+import { EnhancedELDLog } from "./EnhancedELDLog";
 
 interface User {
   id: string;
@@ -61,48 +67,58 @@ interface ResultsPageProps {
   onSaveTrip: () => void;
 }
 
-export function ResultsPage({ user, tripResult, onNavigate, onSaveTrip }: ResultsPageProps) {
-  const [activeTab, setActiveTab] = useState<'map' | 'logs'>('map');
+export function ResultsPage({
+  user,
+  tripResult,
+  onNavigate,
+  onSaveTrip,
+}: ResultsPageProps) {
+  const [activeTab, setActiveTab] = useState<"map" | "logs">("map");
 
   // Use calculated stops from trip result, fallback to mock data if not available
-  const routeStops = tripResult.stops && tripResult.stops.length > 0 ? tripResult.stops : [
-    {
-      id: '1',
-      type: 'start' as const,
-      location: tripResult.inputData.currentLocation,
-      time: '06:00',
-      duration: 0,
-      description: 'Trip Start',
-      mileage: 0
-    },
-    {
-      id: '2',
-      type: 'pickup' as const,
-      location: tripResult.inputData.pickupLocation,
-      time: '08:30',
-      duration: 60,
-      description: 'Pickup - 1 hour',
-      mileage: 150
-    },
-    {
-      id: '3',
-      type: 'fuel' as const,
-      location: 'I-40 Rest Area, Mile 250',
-      time: '11:45',
-      duration: 30,
-      description: 'Fuel Stop',
-      mileage: 250
-    },
-    {
-      id: '4',
-      type: 'dropoff' as const,
-      location: tripResult.inputData.dropoffLocation,
-      time: '15:00',
-      duration: 60,
-      description: 'Delivery - 1 hour',
-      mileage: tripResult.totalDistance
-    }
-  ];
+  const routeStops =
+    tripResult.stops && tripResult.stops.length > 0
+      ? tripResult.stops
+      : [
+          {
+            id: "1",
+            type: "start" as const,
+            location:
+              tripResult.inputData?.currentLocation || "Current Location",
+            time: "06:00",
+            duration: 0,
+            description: "Trip Start",
+            mileage: 0,
+          },
+          {
+            id: "2",
+            type: "pickup" as const,
+            location: tripResult.inputData?.pickupLocation || "Pickup Location",
+            time: "08:30",
+            duration: 60,
+            description: "Pickup - 1 hour",
+            mileage: 150,
+          },
+          {
+            id: "3",
+            type: "fuel" as const,
+            location: "I-40 Rest Area, Mile 250",
+            time: "11:45",
+            duration: 30,
+            description: "Fuel Stop",
+            mileage: 250,
+          },
+          {
+            id: "4",
+            type: "dropoff" as const,
+            location:
+              tripResult.inputData?.dropoffLocation || "Dropoff Location",
+            time: "15:00",
+            duration: 60,
+            description: "Delivery - 1 hour",
+            mileage: tripResult.totalDistance,
+          },
+        ];
 
   const handleSaveTrip = () => {
     onSaveTrip();
@@ -116,10 +132,10 @@ export function ResultsPage({ user, tripResult, onNavigate, onSaveTrip }: Result
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="sm"
-                onClick={() => onNavigate('dashboard')}
+                onClick={() => onNavigate("dashboard")}
                 className="mr-4 text-white hover:bg-white/10"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -129,18 +145,21 @@ export function ResultsPage({ user, tripResult, onNavigate, onSaveTrip }: Result
                 <div className="w-8 h-8 bg-white/10 backdrop-blur-sm rounded-lg flex items-center justify-center">
                   <Route className="w-4 h-4 text-white" />
                 </div>
-                <h1 className="text-xl font-bold text-white">
-                  Trip Results
-                </h1>
+                <h1 className="text-xl font-bold text-white">Trip Results</h1>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm" className="btn-secondary-highway" disabled>
+              <Button
+                variant="outline"
+                size="sm"
+                className="btn-secondary-highway"
+                disabled
+              >
                 <Download className="w-4 h-4 mr-2" />
                 Export PDF
               </Button>
-              <Button 
+              <Button
                 size="sm"
                 onClick={handleSaveTrip}
                 className="btn-highway"
@@ -162,40 +181,56 @@ export function ResultsPage({ user, tripResult, onNavigate, onSaveTrip }: Result
                 <Clock className="w-6 h-6 text-white" />
               </div>
               <div className="text-2xl font-bold">
-                {tripResult.totalDrivingHours}h
+                {tripResult.totalDrivingHours || 0}h
               </div>
-              <div className="text-sm text-muted-foreground font-medium">Total Driving</div>
+              <div className="text-sm text-muted-foreground font-medium">
+                Total Driving
+              </div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-slate-900 dark:text-white">
-                {tripResult.totalDistance} mi
+                {tripResult.totalDistance || 0} mi
               </div>
-              <div className="text-sm text-muted-foreground">Total Distance</div>
+              <div className="text-sm text-muted-foreground">
+                Total Distance
+              </div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-slate-900 dark:text-white">
-                {tripResult.totalOnDutyHours || tripResult.totalDrivingHours + 2}h
+                {tripResult.totalOnDutyHours ||
+                  (tripResult.totalDrivingHours || 0) + 2}
+                h
               </div>
               <div className="text-sm text-muted-foreground">Total On-Duty</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-slate-900 dark:text-white">
-                {tripResult.remainingCycle.toFixed(1)}h
+                {tripResult.remainingCycle?.toFixed(1) || "0.0"}h
               </div>
-              <div className="text-sm text-muted-foreground">Remaining Cycle</div>
+              <div className="text-sm text-muted-foreground">
+                Remaining Cycle
+              </div>
             </div>
             <div className="text-center">
               <div className="flex items-center justify-center space-x-2">
-                {tripResult.isCompliant ? (
+                {tripResult.isCompliant !== false ? (
                   <CheckCircle className="w-5 h-5 text-green-500" />
                 ) : (
                   <AlertTriangle className="w-5 h-5 text-red-500" />
                 )}
-                <Badge 
-                  variant={tripResult.isCompliant ? "default" : "destructive"}
-                  className={tripResult.isCompliant ? "bg-green-100 text-green-800" : ""}
+                <Badge
+                  variant={
+                    tripResult.isCompliant !== false ? "default" : "destructive"
+                  }
+                  className={
+                    tripResult.isCompliant !== false
+                      ? "bg-green-100 text-green-800"
+                      : ""
+                  }
                 >
-                  {tripResult.isCompliant ? 'Compliant' : 'Non-Compliant'}
+                  {tripResult.isCompliant !== false
+                    ? "Compliant"
+                    : "Non-Compliant"}
                 </Badge>
               </div>
               <div className="text-sm text-muted-foreground">HOS Status</div>
@@ -210,22 +245,22 @@ export function ResultsPage({ user, tripResult, onNavigate, onSaveTrip }: Result
           <div className="flex space-x-8">
             <button
               className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'map'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                activeTab === "map"
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
-              onClick={() => setActiveTab('map')}
+              onClick={() => setActiveTab("map")}
             >
               <Map className="w-4 h-4 inline mr-2" />
               Route Map
             </button>
             <button
               className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'logs'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                activeTab === "logs"
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
-              onClick={() => setActiveTab('logs')}
+              onClick={() => setActiveTab("logs")}
             >
               <FileText className="w-4 h-4 inline mr-2" />
               ELD Logs
@@ -243,7 +278,7 @@ export function ResultsPage({ user, tripResult, onNavigate, onSaveTrip }: Result
               <CardHeader>
                 <CardTitle>Route Information</CardTitle>
                 <CardDescription>
-                  {tripResult.route}
+                  {tripResult.route || "Route information not available"}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -251,12 +286,24 @@ export function ResultsPage({ user, tripResult, onNavigate, onSaveTrip }: Result
                   {routeStops.map((stop, index) => (
                     <div key={stop.id} className="flex items-start space-x-3">
                       <div className="flex-shrink-0 mt-1">
-                        {stop.type === 'start' && <MapPin className="w-4 h-4 text-blue-500" />}
-                        {stop.type === 'pickup' && <MapPin className="w-4 h-4 text-green-500" />}
-                        {stop.type === 'dropoff' && <MapPin className="w-4 h-4 text-red-500" />}
-                        {stop.type === 'fuel' && <Fuel className="w-4 h-4 text-orange-500" />}
-                        {stop.type === 'rest' && <Clock className="w-4 h-4 text-purple-500" />}
-                        {stop.type === 'sleeper' && <Bed className="w-4 h-4 text-indigo-500" />}
+                        {stop.type === "start" && (
+                          <MapPin className="w-4 h-4 text-blue-500" />
+                        )}
+                        {stop.type === "pickup" && (
+                          <MapPin className="w-4 h-4 text-green-500" />
+                        )}
+                        {stop.type === "dropoff" && (
+                          <MapPin className="w-4 h-4 text-red-500" />
+                        )}
+                        {stop.type === "fuel" && (
+                          <Fuel className="w-4 h-4 text-orange-500" />
+                        )}
+                        {stop.type === "rest" && (
+                          <Clock className="w-4 h-4 text-purple-500" />
+                        )}
+                        {stop.type === "sleeper" && (
+                          <Bed className="w-4 h-4 text-indigo-500" />
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
@@ -265,7 +312,9 @@ export function ResultsPage({ user, tripResult, onNavigate, onSaveTrip }: Result
                           </p>
                           {stop.duration > 0 && (
                             <Badge variant="secondary" className="text-xs">
-                              {stop.duration >= 60 ? `${Math.floor(stop.duration / 60)}h` : `${stop.duration}m`}
+                              {stop.duration >= 60
+                                ? `${Math.floor(stop.duration / 60)}h`
+                                : `${stop.duration}m`}
                             </Badge>
                           )}
                         </div>
@@ -285,15 +334,15 @@ export function ResultsPage({ user, tripResult, onNavigate, onSaveTrip }: Result
 
           {/* Main Content Area */}
           <div className="lg:col-span-2">
-            {activeTab === 'map' && (
-              <InteractiveMap 
+            {activeTab === "map" && (
+              <LeafletMap
                 stops={routeStops}
                 totalDistance={tripResult.totalDistance}
               />
             )}
-            
-            {activeTab === 'logs' && (
-              <EnhancedELDLog 
+
+            {activeTab === "logs" && (
+              <EnhancedELDLog
                 dailyLogs={tripResult.dailyLogs || []}
                 driverName={user.name}
                 totalMiles={tripResult.totalDistance}
@@ -306,36 +355,37 @@ export function ResultsPage({ user, tripResult, onNavigate, onSaveTrip }: Result
 
         {/* Actions */}
         {/* Compliance Issues */}
-        {tripResult.complianceIssues && tripResult.complianceIssues.length > 0 && (
-          <Card className="mt-6 border-red-200 dark:border-red-800">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2 text-red-600">
-                <AlertTriangle className="w-5 h-5" />
-                <span>Compliance Issues</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2">
-                {tripResult.complianceIssues.map((issue, index) => (
-                  <li key={index} className="flex items-center space-x-2 text-red-600">
-                    <AlertTriangle className="w-4 h-4" />
-                    <span>{issue}</span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        )}
+        {tripResult.complianceIssues &&
+          tripResult.complianceIssues.length > 0 && (
+            <Card className="mt-6 border-red-200 dark:border-red-800">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2 text-red-600">
+                  <AlertTriangle className="w-5 h-5" />
+                  <span>Compliance Issues</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  {tripResult.complianceIssues.map((issue, index) => (
+                    <li
+                      key={index}
+                      className="flex items-center space-x-2 text-red-600"
+                    >
+                      <AlertTriangle className="w-4 h-4" />
+                      <span>{issue}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
 
         <div className="mt-6 flex justify-center space-x-4">
-          <Button 
-            variant="outline"
-            onClick={() => onNavigate('trip-input')}
-          >
+          <Button variant="outline" onClick={() => onNavigate("trip-input")}>
             Plan Another Trip
           </Button>
-          <Button 
-            onClick={() => onNavigate('dashboard')}
+          <Button
+            onClick={() => onNavigate("dashboard")}
             className="bg-blue-600 hover:bg-blue-700"
           >
             Return to Dashboard

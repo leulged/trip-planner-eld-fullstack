@@ -3,11 +3,15 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import User
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.middleware.csrf import get_token
 
 from .models import Trip, RoutePoint, ELDLog, DutyStatus
 from .serializers import (
     TripSerializer, TripCalculationRequestSerializer, 
-    TripCalculationResponseSerializer
+    TripCalculationResponseSerializer, UserSerializer
 )
 from .calculations import HOSCalculator
 
@@ -41,9 +45,12 @@ def calculate_trip(request):
         "current_cycle_used": 25.5
     }
     """
+    print(f"DEBUG: Calculate trip request data: {request.data}")
+    
     # Validate input
     serializer = TripCalculationRequestSerializer(data=request.data)
     if not serializer.is_valid():
+        print(f"DEBUG: Serializer errors: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     # Extract data
@@ -209,3 +216,145 @@ def trip_eld_logs(request, trip_id):
 def health_check(request):
     """Health check endpoint"""
     return Response({'status': 'healthy', 'message': 'Trip Planner API is running'})
+
+
+@api_view(['GET'])
+@ensure_csrf_cookie
+def get_csrf_token(request):
+    """Get CSRF token endpoint"""
+    return Response({'csrf_token': get_token(request)})
+
+
+@api_view(['POST'])
+@ensure_csrf_cookie
+def login_user(request):
+    """Login endpoint"""
+    try:
+        data = request.data
+        email = data.get('email')
+        password = data.get('password')
+        
+        print(f"DEBUG: Email: {email}, Password: {password}")
+        
+        if not email or not password:
+            return Response(
+                {'error': 'Email and password are required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Find user by email
+        try:
+            user = User.objects.get(email=email)
+            print(f"DEBUG: Found user: {user.username}")
+        except User.DoesNotExist:
+            print(f"DEBUG: User not found for email: {email}")
+            return Response(
+                {'error': 'Invalid email or password'}, 
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        # Authenticate user
+        authenticated_user = authenticate(username=user.username, password=password)
+        print(f"DEBUG: Authenticated user: {authenticated_user}")
+        if authenticated_user is None:
+            return Response(
+                {'error': 'Invalid email or password'}, 
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        # Login user (creates session)
+        login(request, authenticated_user)
+        print(f"DEBUG: User logged in, session key: {request.session.session_key}")
+        
+        # Return user data
+        serializer = UserSerializer(authenticated_user)
+        print(f"DEBUG: User serializer data: {serializer.data}")
+        return Response({
+            'message': 'Login successful',
+            'user': serializer.data,
+            'session_id': request.session.session_key,
+            'csrf_token': get_token(request)
+        })
+        
+    except Exception as e:
+        print(f"DEBUG: Exception in login: {e}")
+        import traceback
+        print(f"DEBUG: Traceback: {traceback.format_exc()}")
+        return Response(
+            {'error': f'Login failed: {str(e)}'}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['POST'])
+@ensure_csrf_cookie
+def signup_user(request):
+    """Signup endpoint"""
+    try:
+        data = request.data
+        email = data.get('email')
+        password = data.get('password')
+        first_name = data.get('first_name')
+        last_name = data.get('last_name')
+        
+        if not all([email, password, first_name, last_name]):
+            return Response(
+                {'error': 'All fields are required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Check if user already exists
+        if User.objects.filter(email=email).exists():
+            return Response(
+                {'error': 'User with this email already exists'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Create new user
+        username = email.split('@')[0]  # Use email prefix as username
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password,
+            first_name=first_name,
+            last_name=last_name
+        )
+        
+        # Login the new user
+        login(request, user)
+        
+        # Return user data
+        serializer = UserSerializer(user)
+        return Response({
+            'message': 'Account created successfully',
+            'user': serializer.data,
+            'session_id': request.session.session_key,
+            'csrf_token': get_token(request)
+        }, status=status.HTTP_201_CREATED)
+        
+    except Exception as e:
+        return Response(
+            {'error': f'Signup failed: {str(e)}'}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['POST'])
+@ensure_csrf_cookie
+def logout_user(request):
+    """Logout endpoint"""
+    logout(request)
+    return Response({'message': 'Logged out successfully'})
+
+
+@api_view(['GET'])
+def get_current_user(request):
+    """Get current user endpoint"""
+    if request.user.is_authenticated:
+        serializer = UserSerializer(request.user)
+        return Response({'user': serializer.data})
+    else:
+        return Response(
+            {'error': 'Not authenticated'}, 
+            status=status.HTTP_401_UNAUTHORIZED
+        )

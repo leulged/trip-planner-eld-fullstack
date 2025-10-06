@@ -1,12 +1,29 @@
-import React, { useState } from 'react';
-import { ArrowLeft, MapPin, Clock, Settings, AlertCircle, Truck, Navigation, Fuel, CheckCircle } from 'lucide-react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Switch } from './ui/switch';
-import { Slider } from './ui/slider';
-import { Alert, AlertDescription } from './ui/alert';
+import React, { useState } from "react";
+import {
+  ArrowLeft,
+  MapPin,
+  Clock,
+  Settings,
+  AlertCircle,
+  Truck,
+  Navigation,
+  Fuel,
+  CheckCircle,
+} from "lucide-react";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "./ui/card";
+import { Switch } from "./ui/switch";
+import { Slider } from "./ui/slider";
+import { Alert, AlertDescription } from "./ui/alert";
+import { calculateTrip } from "./TripCalculator";
 
 interface User {
   id: string;
@@ -24,20 +41,39 @@ interface TripInputData {
   includeFuelStops: boolean;
 }
 
+interface TripResult {
+  id: string;
+  date: string;
+  route: string;
+  totalDistance: number;
+  totalDrivingHours: number;
+  totalOnDutyHours: number;
+  isCompliant: boolean;
+  remainingCycle: number;
+  inputData: TripInputData;
+  stops: any[];
+  dailyLogs: any[];
+  complianceIssues: string[];
+}
+
 interface TripInputFormProps {
   user: User;
   onSubmit: (data: TripInputData) => void;
   onNavigate: (page: string) => void;
 }
 
-export function TripInputForm({ user, onSubmit, onNavigate }: TripInputFormProps) {
+export function TripInputForm({
+  user,
+  onSubmit,
+  onNavigate,
+}: TripInputFormProps) {
   const [formData, setFormData] = useState<TripInputData>({
-    currentLocation: '',
-    pickupLocation: '',
-    dropoffLocation: '',
+    currentLocation: "",
+    pickupLocation: "",
+    dropoffLocation: "",
     currentCycleUsed: user.currentCycleUsed,
     useSleeperBerth: false,
-    includeFuelStops: true
+    includeFuelStops: true,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -46,16 +82,16 @@ export function TripInputForm({ user, onSubmit, onNavigate }: TripInputFormProps
     const newErrors: Record<string, string> = {};
 
     if (!formData.currentLocation.trim()) {
-      newErrors.currentLocation = 'Current location is required';
+      newErrors.currentLocation = "Current location is required";
     }
     if (!formData.pickupLocation.trim()) {
-      newErrors.pickupLocation = 'Pickup location is required';
+      newErrors.pickupLocation = "Pickup location is required";
     }
     if (!formData.dropoffLocation.trim()) {
-      newErrors.dropoffLocation = 'Drop-off location is required';
+      newErrors.dropoffLocation = "Drop-off location is required";
     }
     if (formData.currentCycleUsed < 0 || formData.currentCycleUsed > 70) {
-      newErrors.currentCycleUsed = 'Cycle hours must be between 0 and 70';
+      newErrors.currentCycleUsed = "Cycle hours must be between 0 and 70";
     }
 
     setErrors(newErrors);
@@ -64,23 +100,28 @@ export function TripInputForm({ user, onSubmit, onNavigate }: TripInputFormProps
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
 
     setIsLoading(true);
-    // Simulate API call with realistic processing time
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    onSubmit(formData);
-    setIsLoading(false);
+    try {
+      // Pass data to parent component to handle API call
+      onSubmit(formData);
+    } catch (error) {
+      console.error("Trip calculation failed:", error);
+      alert("Failed to calculate trip. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const updateFormData = (field: keyof TripInputData, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
     // Clear error for this field when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+      setErrors((prev) => ({ ...prev, [field]: "" }));
     }
   };
 
@@ -93,10 +134,10 @@ export function TripInputForm({ user, onSubmit, onNavigate }: TripInputFormProps
       <header className="highway-gradient border-b border-white/20 sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center h-16">
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
-              onClick={() => onNavigate('dashboard')}
+              onClick={() => onNavigate("dashboard")}
               className="mr-4 text-white hover:bg-white/10"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -106,9 +147,7 @@ export function TripInputForm({ user, onSubmit, onNavigate }: TripInputFormProps
               <div className="w-8 h-8 bg-white/10 backdrop-blur-sm rounded-lg flex items-center justify-center">
                 <Navigation className="w-4 h-4 text-white" />
               </div>
-              <h1 className="text-xl font-bold text-white">
-                Plan New Trip
-              </h1>
+              <h1 className="text-xl font-bold text-white">Plan New Trip</h1>
             </div>
           </div>
         </div>
@@ -137,11 +176,15 @@ export function TripInputForm({ user, onSubmit, onNavigate }: TripInputFormProps
                   id="current-location"
                   placeholder="e.g., Dallas, TX or 123 Main St, Dallas, TX"
                   value={formData.currentLocation}
-                  onChange={(e) => updateFormData('currentLocation', e.target.value)}
-                  className={errors.currentLocation ? 'border-red-500' : ''}
+                  onChange={(e) =>
+                    updateFormData("currentLocation", e.target.value)
+                  }
+                  className={errors.currentLocation ? "border-red-500" : ""}
                 />
                 {errors.currentLocation && (
-                  <p className="text-sm text-red-500">{errors.currentLocation}</p>
+                  <p className="text-sm text-red-500">
+                    {errors.currentLocation}
+                  </p>
                 )}
               </div>
 
@@ -151,11 +194,15 @@ export function TripInputForm({ user, onSubmit, onNavigate }: TripInputFormProps
                   id="pickup-location"
                   placeholder="e.g., Phoenix, AZ or Warehouse, 456 Industrial Blvd"
                   value={formData.pickupLocation}
-                  onChange={(e) => updateFormData('pickupLocation', e.target.value)}
-                  className={errors.pickupLocation ? 'border-red-500' : ''}
+                  onChange={(e) =>
+                    updateFormData("pickupLocation", e.target.value)
+                  }
+                  className={errors.pickupLocation ? "border-red-500" : ""}
                 />
                 {errors.pickupLocation && (
-                  <p className="text-sm text-red-500">{errors.pickupLocation}</p>
+                  <p className="text-sm text-red-500">
+                    {errors.pickupLocation}
+                  </p>
                 )}
               </div>
 
@@ -165,11 +212,15 @@ export function TripInputForm({ user, onSubmit, onNavigate }: TripInputFormProps
                   id="dropoff-location"
                   placeholder="e.g., Los Angeles, CA or Customer Site, 789 Commerce St"
                   value={formData.dropoffLocation}
-                  onChange={(e) => updateFormData('dropoffLocation', e.target.value)}
-                  className={errors.dropoffLocation ? 'border-red-500' : ''}
+                  onChange={(e) =>
+                    updateFormData("dropoffLocation", e.target.value)
+                  }
+                  className={errors.dropoffLocation ? "border-red-500" : ""}
                 />
                 {errors.dropoffLocation && (
-                  <p className="text-sm text-red-500">{errors.dropoffLocation}</p>
+                  <p className="text-sm text-red-500">
+                    {errors.dropoffLocation}
+                  </p>
                 )}
               </div>
             </CardContent>
@@ -198,14 +249,18 @@ export function TripInputForm({ user, onSubmit, onNavigate }: TripInputFormProps
                 </div>
                 <Slider
                   value={[formData.currentCycleUsed]}
-                  onValueChange={(value) => updateFormData('currentCycleUsed', value[0])}
+                  onValueChange={(value) =>
+                    updateFormData("currentCycleUsed", value[0])
+                  }
                   max={70}
                   min={0}
                   step={0.5}
                   className="w-full"
                 />
                 {errors.currentCycleUsed && (
-                  <p className="text-sm text-red-500">{errors.currentCycleUsed}</p>
+                  <p className="text-sm text-red-500">
+                    {errors.currentCycleUsed}
+                  </p>
                 )}
               </div>
 
@@ -213,7 +268,8 @@ export function TripInputForm({ user, onSubmit, onNavigate }: TripInputFormProps
                 <Alert>
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
-                    You're approaching your 70-hour limit. Consider a 34-hour restart if needed.
+                    You're approaching your 70-hour limit. Consider a 34-hour
+                    restart if needed.
                   </AlertDescription>
                 </Alert>
               )}
@@ -238,12 +294,15 @@ export function TripInputForm({ user, onSubmit, onNavigate }: TripInputFormProps
                 <div className="space-y-1">
                   <Label>Use Sleeper Berth Provisions</Label>
                   <p className="text-sm text-muted-foreground">
-                    Enable split sleeper berth for flexible rest periods (7+3 or 8+2 hours)
+                    Enable split sleeper berth for flexible rest periods (7+3 or
+                    8+2 hours)
                   </p>
                 </div>
                 <Switch
                   checked={formData.useSleeperBerth}
-                  onCheckedChange={(checked) => updateFormData('useSleeperBerth', checked)}
+                  onCheckedChange={(checked) =>
+                    updateFormData("useSleeperBerth", checked)
+                  }
                 />
               </div>
 
@@ -256,7 +315,9 @@ export function TripInputForm({ user, onSubmit, onNavigate }: TripInputFormProps
                 </div>
                 <Switch
                   checked={formData.includeFuelStops}
-                  onCheckedChange={(checked) => updateFormData('includeFuelStops', checked)}
+                  onCheckedChange={(checked) =>
+                    updateFormData("includeFuelStops", checked)
+                  }
                 />
               </div>
             </CardContent>
@@ -281,7 +342,9 @@ export function TripInputForm({ user, onSubmit, onNavigate }: TripInputFormProps
                 <ul className="text-sm space-y-2 grid gap-1">
                   <li className="flex items-start space-x-2">
                     <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                    <span>Property-carrying driver under 70-hour/8-day cycle</span>
+                    <span>
+                      Property-carrying driver under 70-hour/8-day cycle
+                    </span>
                   </li>
                   <li className="flex items-start space-x-2">
                     <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
@@ -293,15 +356,22 @@ export function TripInputForm({ user, onSubmit, onNavigate }: TripInputFormProps
                   </li>
                   <li className="flex items-start space-x-2">
                     <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                    <span>30-minute rest break required after 8 cumulative driving hours</span>
+                    <span>
+                      30-minute rest break required after 8 cumulative driving
+                      hours
+                    </span>
                   </li>
                   <li className="flex items-start space-x-2">
                     <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                    <span>10 consecutive hours off-duty required for daily reset</span>
+                    <span>
+                      10 consecutive hours off-duty required for daily reset
+                    </span>
                   </li>
                   <li className="flex items-start space-x-2">
                     <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                    <span>11-hour daily driving limit and 14-hour driving window</span>
+                    <span>
+                      11-hour daily driving limit and 14-hour driving window
+                    </span>
                   </li>
                 </ul>
               </div>
@@ -310,14 +380,14 @@ export function TripInputForm({ user, onSubmit, onNavigate }: TripInputFormProps
 
           {/* Submit Button */}
           <div className="flex flex-col sm:flex-row justify-end space-y-4 sm:space-y-0 sm:space-x-4">
-            <Button 
-              type="button" 
+            <Button
+              type="button"
               className="btn-secondary-highway w-full sm:w-auto"
-              onClick={() => onNavigate('dashboard')}
+              onClick={() => onNavigate("dashboard")}
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               type="submit"
               className="btn-highway w-full sm:w-auto text-lg px-8 py-3 h-auto"
               disabled={isLoading}

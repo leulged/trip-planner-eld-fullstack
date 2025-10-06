@@ -53,6 +53,18 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# CSRF settings for API endpoints
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
+# Allow CSRF cookie to be read by JavaScript
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SAMESITE = 'Lax'
+
 ROOT_URLCONF = 'trip_planner.urls'
 
 TEMPLATES = [
@@ -133,7 +145,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5173",
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True  # Only for development
+CORS_ALLOW_ALL_ORIGINS = False  # Must be False when using credentials
+CORS_ALLOW_CREDENTIALS = True   # Allow cookies to be sent
 
 # REST Framework settings
 REST_FRAMEWORK = {
@@ -143,4 +156,11 @@ REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
     ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+    ],
 }
+
+# Session settings
+SESSION_COOKIE_HTTPONLY = False  # Allow JavaScript access for frontend
+SESSION_COOKIE_SAMESITE = 'Lax'  # Allow cross-site requests
